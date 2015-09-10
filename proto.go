@@ -27,3 +27,18 @@ type MessageWriter interface {
 	Write([]byte) (int, error)
 	EOM()
 }
+
+// Copy copy the bytes into a if a cannot
+// hold b, grow a in order to contain it
+func Copy(a, b []byte) []byte {
+	La := len(a)
+	Lb := len(b)
+
+	if La < Lb {
+		a = make([]byte, Lb)
+	}
+
+	copy(a, b)
+
+	return a
+}
