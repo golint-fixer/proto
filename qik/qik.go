@@ -1,21 +1,21 @@
 package qik
 
 import (
-	"io"
-	"github.com/johnmcconnell/proto"
 	"fmt"
+	"github.com/johnmcconnell/proto"
+	"io"
 )
 
 // Reader read messages using this Reader
 type Reader struct {
-	R io.Reader
-	Buff []byte
+	R     io.Reader
+	Buff  []byte
 	Count int
 }
 
 // Writer encode messages using this Writer
 type Writer struct {
-	W io.Writer
+	W    io.Writer
 	Buff []byte
 }
 
@@ -23,8 +23,8 @@ type Writer struct {
 // will decode messages from an io.Reader
 func NewReader(R io.Reader) *Reader {
 	r := Reader{
-		R: R,
-		Buff: make([]byte, 2),
+		R:     R,
+		Buff:  make([]byte, 2),
 		Count: 0,
 	}
 
@@ -35,7 +35,7 @@ func NewReader(R io.Reader) *Reader {
 // will encode messages from an io.Writer
 func NewWriter(W io.Writer) *Writer {
 	w := Writer{
-		W: W,
+		W:    W,
 		Buff: make([]byte, 2),
 	}
 
@@ -56,6 +56,7 @@ func (r *Reader) Read(b []byte) (int, error) {
 		if n < 2 {
 			return n, fmt.Errorf(
 				"Really? only read %v bytes from the reader",
+				n,
 			)
 		}
 
@@ -97,13 +98,14 @@ func (w *Writer) Write(b []byte) (int, error) {
 
 	s := 0
 
-	for L < 0 {
-		s, err = w.W.Write(b)
+	for L > 0 {
+		n, err = w.W.Write(b)
 
 		if err != nil {
 			return s, err
 		}
 
+		s += n
 		L -= n
 	}
 
