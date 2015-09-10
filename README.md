@@ -7,17 +7,17 @@ Performant Message Protocols over TCP keep alive
 
 ```
 PASS
-BenchmarkEncode_100B  10000000         190 ns/op        50 B/op        1 allocs/op
-BenchmarkEncode_1K  10000000         190 ns/op        50 B/op        1 allocs/op
-BenchmarkEncode_100K  10000000         155 ns/op        50 B/op        1 allocs/op
-BenchmarkEncode_1M  10000000         127 ns/op        50 B/op        1 allocs/op
-BenchmarkEncode_100M  10000000         123 ns/op        49 B/op        1 allocs/op
-BenchmarkDecode_100B   2000000         860 ns/op       162 B/op        2 allocs/op
-BenchmarkDecode_1K   1000000        1059 ns/op       162 B/op        2 allocs/op
-BenchmarkDecode_100K   3000000         600 ns/op       162 B/op        2 allocs/op
-BenchmarkDecode_1M   5000000         307 ns/op       162 B/op        2 allocs/op
-BenchmarkDecode_100M   5000000         246 ns/op       161 B/op        2 allocs/op
-ok    github.com/johnmcconnell/proto/qik  97.635s
+BenchmarkEncode_100B  10000000         198 ns/op        50 B/op        1 allocs/op
+BenchmarkEncode_1K  10000000         201 ns/op        50 B/op        1 allocs/op
+BenchmarkEncode_100K  10000000         168 ns/op        50 B/op        1 allocs/op
+BenchmarkEncode_1M   3000000         482 ns/op        50 B/op        1 allocs/op
+BenchmarkEncode_100M    200000       10169 ns/op        49 B/op        1 allocs/op
+BenchmarkDecode_100B   3000000         473 ns/op       162 B/op        2 allocs/op
+BenchmarkDecode_1K   3000000         478 ns/op       162 B/op        2 allocs/op
+BenchmarkDecode_100K   5000000         335 ns/op       162 B/op        2 allocs/op
+BenchmarkDecode_1M   5000000         244 ns/op       162 B/op        2 allocs/op
+BenchmarkDecode_100M   5000000         226 ns/op       161 B/op        2 allocs/op
+ok    github.com/johnmcconnell/proto/qik  94.951s
 ```
 
 ## Usage

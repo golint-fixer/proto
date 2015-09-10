@@ -88,7 +88,7 @@ func (r *Reader) Read(b []byte) (int, error) {
 // two bytes designate the message length
 func (w *Writer) Write(b []byte) (int, error) {
 	L := len(b)
-	BS(w.Buff, L)
+	BL := BS(w.Buff, L)
 
 	n, err := w.W.Write(w.Buff)
 
@@ -99,7 +99,7 @@ func (w *Writer) Write(b []byte) (int, error) {
 	s := 0
 
 	for L > 0 {
-		n, err = w.W.Write(b)
+		n, err = w.W.Write(b[:BL])
 
 		if err != nil {
 			return s, err
@@ -122,7 +122,12 @@ func I(bs []byte) int {
 }
 
 // BS convert an int to 2 bytes
-func BS(b []byte, x int) {
+// returns the limit
+func BS(b []byte, x int) int {
+	x = 0xFFFF & x
+
 	b[0] = byte(x >> 8)
 	b[1] = byte(x & 0xFF)
+
+	return x
 }
