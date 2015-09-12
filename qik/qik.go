@@ -10,12 +10,12 @@ import (
 type Protocol struct{}
 
 // NewReader ...
-func (p *Protocol) NewReader(R io.Reader) *Reader {
+func (p *Protocol) NewReader(R io.Reader) io.Reader {
 	return NewReader(R)
 }
 
 // NewWriter ...
-func (p *Protocol) NewWriter(W io.Writer) *Writer {
+func (p *Protocol) NewWriter(W io.Writer) io.Writer {
 	return NewWriter(W)
 }
 

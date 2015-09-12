@@ -17,8 +17,8 @@ var (
 // important to be able to swap out protocols
 // with others
 type Protocol interface {
-	NewReader(io.Reader) MessageReader
-	NewWriter(io.Writer) MessageWriter
+	NewReader(io.Reader) io.Reader
+	NewWriter(io.Writer) io.Writer
 }
 
 // MessageReader has the exact same interface as
