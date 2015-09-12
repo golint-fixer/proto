@@ -2,6 +2,7 @@ package proto
 
 import (
 	"fmt"
+	"io"
 )
 
 var (
@@ -10,6 +11,15 @@ var (
 		"EOM",
 	)
 )
+
+// Protocol is an interface to build the actual
+// underlying message readers and writers. It is
+// important to be able to swap out protocols
+// with others
+type Protocol interface {
+	NewReader(io.Reader) MessageReader
+	NewWriter(io.Writer) MessageWriter
+}
 
 // MessageReader has the exact same interface as
 // io.Reader but can also return a proto.EOM error
@@ -20,12 +30,11 @@ type MessageReader interface {
 }
 
 // MessageWriter has the exat same interface as
-// io.Writer but also includes EOM. EOM designates
-// that everything written is a single message and
-// everything written afterward will be a new message
+// io.Writer. Writing the nil buffer or the empty
+// buffer to a MessageWriter designates the end
+// of a message and the start of a new one
 type MessageWriter interface {
 	Write([]byte) (int, error)
-	EOM()
 }
 
 // Copy copy the bytes into a if a cannot

@@ -6,6 +6,26 @@ import (
 	"io"
 )
 
+// Protocol ...
+type Protocol struct{}
+
+// NewReader ...
+func (p *Protocol) NewReader(R io.Reader) *Reader {
+	return NewReader(R)
+}
+
+// NewWriter ...
+func (p *Protocol) NewWriter(W io.Writer) *Writer {
+	return NewWriter(W)
+}
+
+// NewProtocol ...
+func NewProtocol() *Protocol {
+	p := Protocol{}
+
+	return &p
+}
+
 // Reader read messages using this Reader
 type Reader struct {
 	R       io.Reader
