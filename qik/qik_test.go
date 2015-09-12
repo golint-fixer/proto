@@ -3,13 +3,13 @@ package qik
 import (
 	"bytes"
 	"crypto/rand"
+	"fmt"
 	"github.com/johnmcconnell/nop"
 	"github.com/johnmcconnell/proto"
 	"github.com/stretchr/testify/assert"
 	"io"
-	"fmt"
-	"math"
 	"io/ioutil"
+	"math"
 	"testing"
 )
 
@@ -106,7 +106,6 @@ func TestEncoding(t *testing.T) {
 		n,
 		"5 bytes were written",
 	)
-
 
 	n, err = E.Write(nil)
 
@@ -389,6 +388,56 @@ func TestDecodingMultMessage(t *testing.T) {
 	)
 }
 
+func TestMultiLargeBytes(t *testing.T) {
+	assert := assert.New(t)
+
+	// 100 Kilobyte
+	EBS1, err := randomBytes(1 * 100 * 1000)
+
+	R := bytes.NewReader(EBS1)
+	W := bytes.NewBuffer(nil)
+	E := NewWriter(W)
+
+	R.WriteTo(E)
+
+	E.Write(nil) // new message
+
+	EBS2, err := randomBytes(1 * 100 * 1000)
+	R = bytes.NewReader(EBS2)
+
+	R.WriteTo(E)
+
+	D := NewReader(W)
+
+	BS1, err := ioutil.ReadAll(D)
+
+	assert.Equal(
+		proto.ErrEOM,
+		err,
+		"Hit the end of message",
+	)
+
+	assert.Equal(
+		EBS1,
+		BS1,
+		"bytes match",
+	)
+
+	BS2, err := ioutil.ReadAll(D)
+
+	assert.Equal(
+		nil,
+		err,
+		"Hit EOF",
+	)
+
+	assert.Equal(
+		EBS2,
+		BS2,
+		"bytes match",
+	)
+}
+
 func TestLargeBytes(t *testing.T) {
 	assert := assert.New(t)
 
@@ -408,7 +457,7 @@ func TestLargeBytes(t *testing.T) {
 	assert.Equal(
 		nil,
 		err,
-		"Hit the end of message",
+		"nil because EOF",
 	)
 
 	for i := range BS1 {
@@ -427,7 +476,7 @@ func TestLargeBytes(t *testing.T) {
 	assert.Equal(
 		len(BS1),
 		len(BS2),
-		"Save the same number of bytes",
+		"Same number of bytes",
 	)
 
 	// 1 Megabyte
@@ -446,7 +495,7 @@ func TestLargeBytes(t *testing.T) {
 	assert.Equal(
 		nil,
 		err,
-		"Hit the end of message",
+		"nil because EOF",
 	)
 
 	for i := range BS1 {
@@ -465,7 +514,7 @@ func TestLargeBytes(t *testing.T) {
 	assert.Equal(
 		len(BS1),
 		len(BS2),
-		"Save the same number of bytes",
+		"Same number of bytes",
 	)
 }
 

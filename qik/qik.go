@@ -8,9 +8,9 @@ import (
 
 // Reader read messages using this Reader
 type Reader struct {
-	R     io.Reader
-	Buff  []byte
-	Count int
+	R       io.Reader
+	Buff    []byte
+	Count   int
 	Content []byte
 }
 
@@ -88,7 +88,6 @@ func (r *Reader) Read(b []byte) (int, error) {
 		return 0, proto.ErrEOM
 	}
 
-
 	L := len(b)
 
 	if r.Count < L {
@@ -130,7 +129,7 @@ func (w *Writer) Write(b []byte) (int, error) {
 			return 0, err
 		}
 
-		n, err := w.W.Write(b[s:s + BL])
+		n, err := w.W.Write(b[s : s+BL])
 
 		s += n
 
