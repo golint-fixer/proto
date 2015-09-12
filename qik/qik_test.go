@@ -7,6 +7,9 @@ import (
 	"github.com/johnmcconnell/proto"
 	"github.com/stretchr/testify/assert"
 	"io"
+	"fmt"
+	"math"
+	"io/ioutil"
 	"testing"
 )
 
@@ -20,6 +23,40 @@ func randomBytes(S int) ([]byte, error) {
 	}
 
 	return BS, err
+}
+
+func TestItoBS(t *testing.T) {
+	assert := assert.New(t)
+
+	b := make([]byte, 2)
+	for i := 0; i < 0xFFFFFF; i += 0x1F {
+		x := BS(b, i)
+		y := I(b)
+
+		e := int(
+			math.Min(0xFFFF, float64(i)),
+		)
+
+		assert.Equal(
+			e,
+			x,
+			fmt.Sprintf(
+				"e:[%v] == x:[%v]",
+				e,
+				x,
+			),
+		)
+
+		assert.Equal(
+			x,
+			y,
+			fmt.Sprintf(
+				"x:[%v] == y:[%v]",
+				x,
+				y,
+			),
+		)
+	}
 }
 
 func TestEncoding(t *testing.T) {
@@ -46,6 +83,59 @@ func TestEncoding(t *testing.T) {
 
 	assert.Equal(
 		expected,
+		W.Bytes(),
+		"bytes match",
+	)
+
+	BS1 := []byte{0, 1, 2, 3, 4}
+	BS2 := []byte{0, 1}
+	ExpectedBS := []byte{0, 5, 0, 1, 2, 3, 4, 0, 0, 0, 2, 0, 1}
+
+	W = bytes.NewBuffer(nil)
+	E = NewWriter(W)
+
+	n, err = E.Write(BS1)
+
+	assert.Nil(
+		err,
+		"Error is nil",
+	)
+
+	assert.Equal(
+		5,
+		n,
+		"5 bytes were written",
+	)
+
+
+	n, err = E.Write(nil)
+
+	assert.Nil(
+		err,
+		"Error is nil",
+	)
+
+	assert.Equal(
+		0,
+		n,
+		"0 bytes were written",
+	)
+
+	n, err = E.Write(BS2)
+
+	assert.Nil(
+		err,
+		"Error is nil",
+	)
+
+	assert.Equal(
+		2,
+		n,
+		"2 bytes were written",
+	)
+
+	assert.Equal(
+		ExpectedBS,
 		W.Bytes(),
 		"bytes match",
 	)
@@ -296,6 +386,86 @@ func TestDecodingMultMessage(t *testing.T) {
 		expected,
 		complete,
 		"bytes match",
+	)
+}
+
+func TestLargeBytes(t *testing.T) {
+	assert := assert.New(t)
+
+	// 100 Kilobyte
+	BS1, err := randomBytes(1 * 100 * 1000)
+
+	R := bytes.NewReader(BS1)
+	W := bytes.NewBuffer(nil)
+	E := NewWriter(W)
+
+	R.WriteTo(E)
+
+	D := NewReader(W)
+
+	BS2, err := ioutil.ReadAll(D)
+
+	assert.Equal(
+		nil,
+		err,
+		"Hit the end of message",
+	)
+
+	for i := range BS1 {
+		assert.Equal(
+			BS1[i],
+			BS2[i],
+			fmt.Sprintf(
+				"Byte[%v] != [%v], it is [%v]",
+				i,
+				BS1[i],
+				BS2[i],
+			),
+		)
+	}
+
+	assert.Equal(
+		len(BS1),
+		len(BS2),
+		"Save the same number of bytes",
+	)
+
+	// 1 Megabyte
+	BS1, err = randomBytes(1 * 1000 * 1000)
+
+	R = bytes.NewReader(BS1)
+	W = bytes.NewBuffer(nil)
+	E = NewWriter(W)
+
+	R.WriteTo(E)
+
+	D = NewReader(W)
+
+	BS2, err = ioutil.ReadAll(D)
+
+	assert.Equal(
+		nil,
+		err,
+		"Hit the end of message",
+	)
+
+	for i := range BS1 {
+		assert.Equal(
+			BS1[i],
+			BS2[i],
+			fmt.Sprintf(
+				"Byte[%v] != [%v], it is [%v]",
+				i,
+				BS1[i],
+				BS2[i],
+			),
+		)
+	}
+
+	assert.Equal(
+		len(BS1),
+		len(BS2),
+		"Save the same number of bytes",
 	)
 }
 

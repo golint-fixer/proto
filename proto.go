@@ -38,7 +38,7 @@ func Copy(a, b []byte) []byte {
 		a = make([]byte, Lb)
 	}
 
-	copy(a, b)
+	n := copy(a, b)
 
-	return a
+	return a[:n]
 }

@@ -11,6 +11,7 @@ type Reader struct {
 	R     io.Reader
 	Buff  []byte
 	Count int
+	Content []byte
 }
 
 // Writer encode messages using this Writer
@@ -46,37 +47,61 @@ func NewWriter(W io.Writer) *Writer {
 // according to the protocol the first
 // two bytes designate the message length
 func (r *Reader) Read(b []byte) (int, error) {
-	if r.Count == 0 {
-		n, err := r.R.Read(r.Buff)
+	var err error
+
+	if r.Count > 0 {
+		L := len(b)
+
+		if r.Count < L {
+			L = r.Count
+		}
+
+		n, err := r.R.Read(
+			b[:L],
+		)
 
 		if err != nil {
 			return n, err
 		}
 
-		if n < 2 {
-			return n, fmt.Errorf(
-				"Really? only read %v bytes from the reader",
-				n,
-			)
-		}
+		r.Count -= n
 
-		r.Count = I(r.Buff)
+		return n, nil
 	}
+
+	n, err := r.R.Read(r.Buff)
+
+	if err != nil {
+		return n, err
+	}
+
+	if n != 2 {
+		return n, fmt.Errorf(
+			"Really? only read %v bytes from the reader",
+			n,
+		)
+	}
+
+	r.Count = I(r.Buff)
 
 	if r.Count == 0 {
 		return 0, proto.ErrEOM
 	}
 
+
 	L := len(b)
 
-	// Read length of message
-	RL := r.Count
-
-	if L < r.Count {
-		RL = L
+	if r.Count < L {
+		L = r.Count
 	}
 
-	n, err := r.R.Read(b[:RL])
+	n, err = r.R.Read(
+		b[:L],
+	)
+
+	if err != nil {
+		return n, err
+	}
 
 	r.Count -= n
 
@@ -88,25 +113,34 @@ func (r *Reader) Read(b []byte) (int, error) {
 // two bytes designate the message length
 func (w *Writer) Write(b []byte) (int, error) {
 	L := len(b)
-	BL := BS(w.Buff, L)
-
-	n, err := w.W.Write(w.Buff)
-
-	if err != nil {
-		return 0, err
-	}
-
 	s := 0
 
-	for L > 0 {
-		n, err = w.W.Write(b[:BL])
+	for (L - s) >= 0 {
+		R := L - s
+
+		BL := BS(w.Buff, R)
+
+		_, err := w.W.Write(w.Buff)
+
+		if BL == 0 {
+			return 0, nil
+		}
+
+		if err != nil {
+			return 0, err
+		}
+
+		n, err := w.W.Write(b[s:s + BL])
+
+		s += n
 
 		if err != nil {
 			return s, err
 		}
 
-		s += n
-		L -= n
+		if L == s {
+			break
+		}
 	}
 
 	return s, nil
@@ -124,7 +158,9 @@ func I(bs []byte) int {
 // BS convert an int to 2 bytes
 // returns the limit
 func BS(b []byte, x int) int {
-	x = 0xFFFF & x
+	if x > 0xFFFF {
+		x = 0xFFFF
+	}
 
 	b[0] = byte(x >> 8)
 	b[1] = byte(x & 0xFF)

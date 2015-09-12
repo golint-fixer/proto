@@ -3,7 +3,7 @@ Performant Message Protocols over TCP keep alive
 
 ## Performance
 
-### [Qik Protocol](qik)
+### Qik Protocol
 
 ```
 PASS
@@ -20,4 +20,34 @@ BenchmarkDecode_100M   5000000         226 ns/op       161 B/op        2 allocs/
 ok    github.com/johnmcconnell/proto/qik  94.951s
 ```
 
-### [Slim Protocol](slim)
+## Usage
+
+```go
+import (
+  "github.com/johnmcconnell/proto/qik"
+  "bytes"
+)
+
+
+buffer := bytes.NewBuffer(nil)
+encoder := qik.NewWriter(buffer)
+
+encoder.Write([]byte("Hello World!")) // first message "Hello World!"
+encoder.Write(nil)                    // end of first message
+encoder.Write([]byte("Hello World!")) // second message "Hello World!"
+
+bytes := make([]byte, 128)
+decoder := qik.NewReader(buffer)
+
+n, _ := decoder.Read(bytes)
+string(bytes[:n])                     //=> "Hello World!"
+
+_, err := decoder.Read(bytes)
+err                                   //=> proto.ErrEOM{err: "EOM"}
+
+n, _ := decoder.Read(bytes)
+string(bytes[:n])                     //=> "Hello World!"
+
+_, err := decoder.Read(bytes)
+err                                   //=> io.EOF{err: "EOF"}
+```
