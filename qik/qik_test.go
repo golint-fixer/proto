@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"fmt"
-	"github.com/johnmcconnell/nop"
 	"github.com/johnmcconnell/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"math"
@@ -518,71 +518,169 @@ func TestLargeBytes(t *testing.T) {
 	)
 }
 
-func encodeBenchmarkSerial(size int, b *testing.B) {
-	bs, _ := randomBytes(size)
+func TestReadMessage(t *testing.T) {
+	assert := assert.New(t)
 
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		W := nop.NewWriter()
-		E := NewWriter(W)
+	ByteSize := 1000
 
-		b.StartTimer()
-		E.Write(bs)
+	Message, err := randomBytes(ByteSize)
+
+	assert.Nil(
+		err,
+		"could not create random bytes",
+	)
+
+	B := bytes.NewBuffer(nil)
+
+	Encoder := NewWriter(B)
+
+	_, err = Encoder.Write(Message)
+
+	assert.Nil(
+		err,
+		"bytes not written",
+	)
+
+	_, err = Encoder.Write(nil)
+
+	assert.Nil(
+		err,
+		"bytes not written",
+	)
+
+	Decoder := NewReader(B)
+
+	Received, err := proto.ReadMessage(Decoder)
+
+	assert.Nil(
+		err,
+		"bytes not read",
+	)
+
+	assert.Equal(
+		Message,
+		Received,
+		"bytes match",
+	)
+}
+
+func TestWriteMessage(t *testing.T) {
+	assert := assert.New(t)
+
+	ByteSize := 1000
+
+	Message, err := randomBytes(ByteSize)
+
+	assert.Nil(
+		err,
+		"could not create random bytes",
+	)
+
+	B := bytes.NewBuffer(nil)
+
+	Encoder := NewWriter(B)
+
+	_, err = proto.WriteMessage(Encoder, Message)
+
+	assert.Nil(
+		err,
+		"bytes not written",
+	)
+
+	Decoder := NewReader(B)
+
+	Received := make([]byte, 4*ByteSize)
+
+	n, err := Decoder.Read(Received)
+
+	assert.Nil(
+		err,
+		"no error",
+	)
+
+	Received = Received[:n]
+
+	assert.Equal(
+		Message,
+		Received,
+		"bytes match",
+	)
+}
+
+func TestCopyMessages(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	ByteSize := 1000
+	L := 10
+
+	MessagesEncoded := bytes.NewBuffer(nil)
+	Encoder := NewWriter(MessagesEncoded)
+
+	Messages := make([][]byte, L)
+
+	for i := range Messages {
+		// Expected Bytes Per Message
+		Message, err := randomBytes(ByteSize)
+
+		assert.Nil(
+			err,
+			"could not create random bytes",
+		)
+
+		_, err = proto.WriteMessage(Encoder, Message)
+
+		assert.Nil(
+			err,
+			"bytes not written",
+		)
+
+		Messages[i] = Message
 	}
-}
 
-func BenchmarkEncode_100B(b *testing.B) {
-	encodeBenchmarkSerial(100, b)
-}
+	Decoder := NewReader(MessagesEncoded)
 
-func BenchmarkEncode_1K(b *testing.B) {
-	encodeBenchmarkSerial(1000, b)
-}
+	MessagesEncodedAgain := bytes.NewBuffer(nil)
+	EncoderAgain := NewWriter(MessagesEncodedAgain)
 
-func BenchmarkEncode_100K(b *testing.B) {
-	encodeBenchmarkSerial(100*1000, b)
-}
+	B := make([]byte, 512)
 
-func BenchmarkEncode_1M(b *testing.B) {
-	encodeBenchmarkSerial(1*1000*1000, b)
-}
+	_, err := proto.CopyMessages(EncoderAgain, Decoder, B, L-1)
 
-func BenchmarkEncode_100M(b *testing.B) {
-	encodeBenchmarkSerial(100*1000*1000, b)
-}
+	assert.Nil(
+		err,
+		"there is no error",
+	)
 
-func decodeBenchmarkSerial(size int, b *testing.B) {
-	bs, _ := randomBytes(size)
-	buff := make([]byte, 512)
+	_, err = proto.CopyMessages(EncoderAgain, Decoder, B, 1)
 
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		R := bytes.NewBuffer(bs)
-		D := NewReader(R)
+	assert.Nil(
+		err,
+		"there is no error",
+	)
 
-		b.StartTimer()
-		D.Read(buff)
+	_, err = proto.CopyMessages(EncoderAgain, Decoder, B, 1)
+
+	assert.Equal(
+		io.EOF,
+		err,
+		"hit EOF",
+	)
+
+	DecoderAgain := NewReader(MessagesEncodedAgain)
+
+	for _, Sent := range Messages {
+		Received, err := proto.ReadMessage(DecoderAgain)
+
+		assert.Nil(
+			err,
+			"bytes not read",
+		)
+
+		require.Equal(
+			Sent,
+			Received,
+			"bytes match",
+		)
 	}
-}
-
-func BenchmarkDecode_100B(b *testing.B) {
-	decodeBenchmarkSerial(100, b)
-}
-
-func BenchmarkDecode_1K(b *testing.B) {
-	decodeBenchmarkSerial(1000, b)
-}
-
-func BenchmarkDecode_100K(b *testing.B) {
-	decodeBenchmarkSerial(100*1000, b)
-}
-
-func BenchmarkDecode_1M(b *testing.B) {
-	decodeBenchmarkSerial(1*1000*1000, b)
-}
-
-func BenchmarkDecode_100M(b *testing.B) {
-	decodeBenchmarkSerial(100*1000*1000, b)
 }
