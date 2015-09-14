@@ -62,13 +62,24 @@ type MessageWriter interface {
 // WrapConn wraps a network connection around
 // a protocol
 func WrapConn(p Protocol, c net.Conn) net.Conn {
+	W, R := Wrap(p, c, c)
+
 	C := Conn{
 		Conn: c,
-		W:    p.NewWriter(c),
-		R:    p.NewReader(c),
+		W:    W,
+		R:    R,
 	}
 
 	return &C
+}
+
+// Wrap wraps an io.Reader and io.Writer around
+// a protocol
+func Wrap(p Protocol, W io.Writer, R io.Reader) (io.Writer, io.Reader) {
+	W = p.NewWriter(W)
+	R = p.NewReader(R)
+
+	return W, R
 }
 
 // CopyMessages copy N messages from the reader
