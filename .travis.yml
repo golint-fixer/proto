@@ -19,7 +19,7 @@ install:
 
 script:
   - go get -t -d ./...
-  - go get -u github.com/golang/lint/golint
+  - go get -u golang.org/x/lint/golint
   - go get golang.org/x/tools/cmd/vet
   - test -z "$(golint ./...)"
   - test -z "$(gofmt -l .)"
